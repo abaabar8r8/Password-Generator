@@ -1,381 +1,253 @@
-# 密碼產生器：資料結構設計與效能分析專題報告
-## PPT 簡報大綱
+# 密碼產生器：資料結構與演算法實作專案
 
----
+## 📖 專案概述
 
-## 第一部分：專案介紹與背景 (5-8分鐘)
+本專案是一個基於 Java 的密碼產生器應用程式，深入探討**資料結構設計**、**效能分析**與**實際應用**。透過實作多種 Hash Function 演算法與資料結構比較，展示理論知識在實際軟體開發中的應用價值。
 
-### Slide 1: 封面頁
-- **標題**：密碼產生器：資料結構設計與效能分析
-- **副標題**：Hash Function實作與資料結構比較研究
-- **報告者資訊**
-- **日期**
+## 🎯 專案目標與學習重點
 
-### Slide 2: 專案動機與目標
-- **研究動機**
-  - 密碼安全重要性日益增加
-  - 理論與實務結合的學習需求
-  - 資料結構效能的實證分析
-- **專案目標**
-  - 深入理解Hash Table實作機制
-  - 比較不同資料結構的效能表現
-  - 實踐Java程式設計最佳實務
+### 1. 資料結構設計與實作分析
+- **Hash Table 實作機制**：深入分析 Java 中 Hash Table 的底層實作原理
+- **Hash Function 設計**：實作三種不同策略的 Hash Function
+- **碰撞處理策略**：比較 Separate Chaining vs Open Addressing
+- **負載因子影響**：分析不同負載因子對效能的影響
 
-### Slide 3: 專案概覽
-- **系統功能展示**（截圖）
-- **技術架構概述**
-- **主要特色功能**
-  - 多種Hash Function實作
-  - 即時效能分析
-  - 互動式GUI介面
+### 2. 資料結構效能評比與分析  
+- **時間複雜度驗證**：實際測量與理論分析的對比
+- **空間複雜度分析**：不同資料結構的記憶體使用效率
+- **操作效能比較**：插入、刪除、查找在不同資料結構下的表現
+- **實驗數據分析**：透過大量測試驗證理論預期
 
----
+### 3. Java 程式設計與實作
+- **GUI 應用開發**：完整的 Swing 介面設計
+- **物件導向設計**：抽象類別、繼承、多型的實際應用
+- **設計模式運用**：Strategy Pattern、Observer Pattern
+- **軟體工程實踐**：模組化設計、錯誤處理、效能優化
 
-## 第二部分：資料結構設計與實作分析 (15-20分鐘)
+## 🏗️ 系統架構設計
 
-### Slide 4: Hash Table 基礎理論
-- **Hash Table 核心概念**
-  - 鍵值對映射機制
-  - 時間複雜度 O(1) 的理想與現實
-  - 碰撞問題與解決策略
-- **Java中的實作**
-  - HashMap vs Hashtable
-  - 底層數組結構
-  - 負載因子的影響
+### 核心模組架構
+```
+密碼產生器系統
+├── 使用者介面層 (GUI Layer)
+│   ├── PasswordGenerator.java     # 主要GUI介面
+│   └── PerformanceAnalyzer.java   # 效能分析介面
+├── 演算法實作層 (Algorithm Layer)  
+│   ├── HashFunction.java          # Hash演算法抽象類別
+│   ├── SimpleHashFunction         # 簡單除法Hash
+│   ├── MultiplicationHashFunction # 乘法Hash
+│   └── UniversalHashFunction      # 通用Hash
+└── 資料管理層 (Data Layer)
+    ├── ArrayList<String>          # 完整歷史紀錄
+    ├── LinkedList<String>         # 最近密碼佇列
+    └── HashMap/TreeMap            # 效能比較用
+```
 
-### Slide 5: Hash Function 設計原則
-- **良好Hash Function的特性**
-  - 分布均勻性
-  - 計算效率
-  - 確定性與可重現性
-- **常見Hash Function類型**
-  - Division Method
-  - Multiplication Method  
-  - Universal Hashing
+## 🔬 Hash Function 實作分析
 
-### Slide 6: 簡單除法Hash Function實作
+### 1. 簡單除法 Hash Function
 ```java
-// 程式碼展示
+// 實作原理：h(k) = k mod m
 protected int hash(long input, int mod) {
     return (int) Math.abs(input % mod);
 }
 ```
-- **實作原理**：h(k) = k mod m
 - **優點**：計算簡單、速度快
-- **缺點**：分布可能不均勻
-- **適用場景**：快速原型開發
+- **缺點**：分布可能不均勻，容易產生聚集
 
-### Slide 7: 乘法Hash Function實作
+### 2. 乘法 Hash Function  
 ```java
-// 程式碼展示
+// 實作原理：h(k) = ((k * A) >> 32) mod m
+// A = 2654435769L (Knuth建議的黃金比例常數)
 protected int hash(long input, int mod) {
     long k = input & MASK;
-    long product = k * A; // A = 2654435769L
+    long product = k * A;
     long hashValue = (product >> 32) % mod;
     return (int) Math.abs(hashValue);
 }
 ```
-- **實作原理**：基於黃金比例的乘法運算
-- **技術挑戰**：避免浮點精度問題
-- **解決方案**：純整數運算與位元操作
+- **優點**：分布較均勻、不依賴表大小
+- **缺點**：計算較複雜、需要適當的乘數選擇
 
-### Slide 8: 通用Hash Function實作
+### 3. 通用 Hash Function
 ```java
-// 程式碼展示
+// 實作原理：h(k) = ((a*k + b) mod p) mod m  
+// p為大質數，a,b為隨機選擇的係數
 protected int hash(long input, int mod) {
     long ak = ((a % p) * (input % p)) % p;
     long hashValue = ((ak + b) % p) % mod;
     return (int) Math.abs(hashValue);
 }
 ```
-- **實作原理**：h(k) = ((a*k + b) mod p) mod m
-- **理論基礎**：隨機化係數確保均勻分布
-- **安全性考量**：抗惡意輸入攻擊
+- **優點**：理論上最佳的分布均勻性、抗攻擊性強
+- **缺點**：計算開銷最大、需要質數和係數管理
 
-### Slide 9: Hash Function碰撞處理
-- **Separate Chaining (鏈接法)**
-  - 使用LinkedList處理碰撞
-  - 適合碰撞率較高的情況
-- **Open Addressing (開放地址法)**
-  - Linear Probing線性探測
-  - 記憶體使用更有效率
-- **Java HashMap的實際策略**
-  - 鏈接法 + 紅黑樹優化
+## 📊 資料結構效能分析
 
-### Slide 10: 資料結構選擇策略
-- **ArrayList vs LinkedList**
-  - 存取模式分析
-  - 記憶體使用考量
-- **HashMap vs TreeMap**  
-  - 效能vs功能的權衡
-  - 排序需求的影響
-- **Queue的實作選擇**
-  - LinkedList作為FIFO佇列
-  - 密碼歷史管理的應用
+### ArrayList vs LinkedList 比較
+
+| 操作類型 | ArrayList | LinkedList | 分析說明 |
+|---------|-----------|------------|----------|
+| **隨機存取** | O(1) | O(n) | ArrayList 支援直接索引存取 |
+| **順序插入** | O(1)* | O(1) | ArrayList 可能需要擴容 |
+| **中間插入** | O(n) | O(1)* | LinkedList 需要先定位 |
+| **記憶體使用** | 較少 | 較多 | LinkedList 每個節點有額外指標 |
+
+### HashMap vs TreeMap 比較
+
+| 特性 | HashMap | TreeMap | 適用場景 |
+|------|---------|---------|----------|
+| **查找效能** | O(1) 平均 | O(log n) | HashMap 適合頻繁查找 |
+| **插入效能** | O(1) 平均 | O(log n) | HashMap 適合大量插入 |
+| **排序支援** | 無 | 有 | TreeMap 適合需要排序的場景 |
+| **記憶體開銷** | 較小 | 較大 | TreeMap 需要額外的樹結構 |
+
+## 🚀 系統功能特色
+
+### 主要功能模組
+1. **密碼產生核心**
+   - 可調整長度 (4-50字符)
+   - 多種字符集選擇
+   - 三種Hash演算法切換
+   - 即時強度評估
+
+2. **歷史管理系統**
+   - ArrayList 儲存完整歷史
+   - LinkedList Queue 管理最近10個密碼
+   - 記憶體效率優化
+
+3. **效能分析工具**
+   - Hash Function 分布均勻性測試
+   - 資料結構操作效能比較
+   - 詳細統計報告生成
+   - 視覺化效能數據
+
+## 📈 實驗結果與分析
+
+### Hash Function 效能測試結果
+基於 10,000 次測試的平均結果：
+
+```
+密碼長度: 16 字符
+----------------------------------------
+簡單除法Hash       : 總時間   45.23 ms, 平均   0.0045 ms
+乘法Hash           : 總時間   52.67 ms, 平均   0.0053 ms  
+通用Hash           : 總時間   48.91 ms, 平均   0.0049 ms
+
+分布均勻性評估：
+簡單除法Hash       : 87.3%
+乘法Hash           : 93.7%
+通用Hash           : 96.2%
+```
+
+### 資料結構效能實測
+```
+ArrayList vs LinkedList (10,000次操作)
+----------------------------------------
+隨機存取測試：
+ArrayList: 2.1 ms
+LinkedList: 847.3 ms
+
+順序插入測試：
+ArrayList: 12.4 ms  
+LinkedList: 8.7 ms
+
+HashMap vs TreeMap (10,000次操作)
+----------------------------------------
+查找測試：
+HashMap: 3.2 ms
+TreeMap: 15.8 ms
+
+插入測試：
+HashMap: 8.9 ms
+TreeMap: 23.1 ms
+```
+
+## 🛠️ 技術實作細節
+
+### 設計模式應用
+1. **Strategy Pattern**：不同Hash Function的可替換設計
+2. **Template Method Pattern**：Hash Function抽象類別的共同流程
+3. **Observer Pattern**：GUI元件間的事件通知機制
+
+### 錯誤處理與安全性
+- 輸入驗證：防止無效參數導致的異常
+- 記憶體管理：限制歷史紀錄數量避免記憶體洩漏
+- 線程安全：GUI更新使用SwingWorker避免界面凍結
+- 加密安全：使用SecureRandom確保密碼的不可預測性
+
+## 📋 環境需求與安裝
+
+### 系統需求
+- **Java版本**：JDK 8 或更高版本
+- **記憶體**：最少 512MB RAM
+- **作業系統**：Windows, macOS, Linux
+- **開發工具**：任何支援Java的IDE或文字編輯器
+
+### 快速安裝與執行
+```bash
+# 1. 複製專案檔案
+git clone [project-repository]
+
+# 2. 編譯並執行 (Windows)
+compile_and_run.bat
+
+# 3. 編譯並執行 (Unix/Linux/Mac)  
+chmod +x compile_and_run.sh
+./compile_and_run.sh
+
+# 4. 或手動編譯
+javac *.java
+java PasswordGenerator
+```
+
+## 📚 學習成果與貢獻
+
+### 理論知識驗證
+- 透過實作驗證了Hash Table的碰撞處理機制
+- 實際測量證實了不同資料結構的時間複雜度
+- 分析了演算法選擇對實際應用效能的影響
+
+### 程式設計技能
+- 掌握了Java GUI程式設計的完整流程
+- 學會了效能測試和基準測試的方法論
+- 實踐了軟體工程的模組化設計原則
+
+### 實務應用價值
+- 可作為密碼安全性教育的教學工具
+- 演示了資料結構選擇對軟體效能的實際影響
+- 提供了可擴展的演算法比較框架
+
+## 🔮 未來改進方向
+
+### 功能擴展
+1. **更多Hash演算法**：實作SHA-256、bcrypt等現代演算法
+2. **密碼強度機器學習**：使用AI評估密碼安全性
+3. **網路功能**：支援雲端同步和分享
+4. **多語言支援**：國際化界面設計
+
+### 效能優化
+1. **並行計算**：利用多核CPU加速Hash計算
+2. **記憶體池**：減少物件創建的開銷
+3. **快取機制**：常用密碼模式的快取
+4. **JIT優化**：針對HotSpot JVM的特殊優化
+
+## 📖 參考文獻
+
+1. Cormen, T.H., Leiserson, C.E., Rivest, R.L., & Stein, C. (2009). *Introduction to Algorithms, 3rd Edition*. MIT Press.
+2. Sedgewick, R. & Wayne, K. (2011). *Algorithms, 4th Edition*. Addison-Wesley.
+3. Knuth, D.E. (1998). *The Art of Computer Programming, Volume 3: Sorting and Searching*. Addison-Wesley.
+4. Oracle Corporation. (2023). *Java Platform Standard Edition Documentation*.
+5. NIST. (2017). *Special Publication 800-63B: Authentication and Lifecycle Management*.
 
 ---
 
-## 第三部分：效能評比與實驗分析 (15-20分鐘)
+## 📄 專案資訊
 
-### Slide 11: 效能測試方法論
-- **基準測試設計**
-  - 測試環境標準化
-  - 測試數據量選擇
-  - 多次測試求平均值
-- **評估指標定義**
-  - 執行時間測量
-  - 記憶體使用量
-  - 分布均勻性
+- **開發時間**：2024年度學期專案
+- **程式語言**：Java (JDK 8+)
+- **GUI框架**：Swing
+- **授權條款**：教育用途開源授權
+- **維護狀態**：積極維護中
 
-### Slide 12: Hash Function效能比較
-**測試結果圖表**
-```
-密碼長度: 16字符 (10,000次測試)
-┌─────────────────┬──────────┬──────────┐
-│ Hash Function   │ 總時間   │ 平均時間 │
-├─────────────────┼──────────┼──────────┤
-│ 簡單除法Hash    │ 45.23ms  │ 0.0045ms │
-│ 乘法Hash        │ 52.67ms  │ 0.0053ms │
-│ 通用Hash        │ 48.91ms  │ 0.0049ms │
-└─────────────────┴──────────┴──────────┘
-```
-- **效能分析**：簡單Hash最快，但分布品質較差
-- **實務建議**：根據應用需求選擇適當演算法
-
-### Slide 13: Hash分布均勻性分析
-**分布品質比較圖表**
-```
-分布均勻性評估 (100個桶，10,000次測試)
-┌─────────────────┬──────────┬──────────┬──────────┐
-│ Hash Function   │ 標準差   │ 均勻性   │ 評級     │
-├─────────────────┼──────────┼──────────┼──────────┤
-│ 簡單除法Hash    │ 12.7     │ 87.3%    │ 良好     │
-│ 乘法Hash        │ 6.3      │ 93.7%    │ 優秀     │
-│ 通用Hash        │ 3.8      │ 96.2%    │ 卓越     │
-└─────────────────┴──────────┴──────────┴──────────┘
-```
-
-### Slide 14: 資料結構操作效能對比
-**ArrayList vs LinkedList**
-```
-操作效能比較 (10,000次操作)
-┌─────────────┬─────────────┬─────────────┐
-│ 操作類型    │ ArrayList   │ LinkedList  │
-├─────────────┼─────────────┼─────────────┤
-│ 隨機存取    │ 2.1ms       │ 847.3ms     │
-│ 順序插入    │ 12.4ms      │ 8.7ms       │
-│ 記憶體使用  │ 較少        │ 較多        │
-└─────────────┴─────────────┴─────────────┘
-```
-
-**HashMap vs TreeMap**
-```
-┌─────────────┬─────────────┬─────────────┐
-│ 操作類型    │ HashMap     │ TreeMap     │
-├─────────────┼─────────────┼─────────────┤
-│ 查找操作    │ 3.2ms       │ 15.8ms      │
-│ 插入操作    │ 8.9ms       │ 23.1ms      │
-│ 排序支援    │ 無          │ 有          │
-└─────────────┴─────────────┴─────────────┘
-```
-
-### Slide 15: 時間複雜度驗證
-- **理論預期 vs 實測結果**
-  - O(1) HashMap查找的實際表現
-  - O(log n) TreeMap的穩定性
-  - O(n) LinkedList隨機存取的線性增長
-- **大數據量下的表現**
-  - 測試1K, 10K, 100K資料量
-  - 複雜度曲線圖展示
-
-### Slide 16: 記憶體使用分析
-- **不同資料結構的空間開銷**
-  - ArrayList: 連續記憶體+擴容機制
-  - LinkedList: 節點記憶體+指標開銷
-  - HashMap: 桶陣列+鏈表/樹結構
-- **記憶體效率建議**
-  - 根據數據量選擇適當結構
-  - 考慮擴容對效能的影響
-
----
-
-## 第四部分：Java程式設計實作 (10-15分鐘)
-
-### Slide 17: 系統架構設計
-**三層架構圖**
-```
-┌─────────────────────────────────────────┐
-│           使用者介面層 (GUI Layer)        │
-│  PasswordGenerator.java | PerformanceAnalyzer.java │
-├─────────────────────────────────────────┤
-│          演算法實作層 (Algorithm Layer)    │
-│  HashFunction.java | SimpleHash | MultiplicationHash │
-├─────────────────────────────────────────┤
-│           資料管理層 (Data Layer)         │
-│  ArrayList | LinkedList | HashMap | TreeMap │
-└─────────────────────────────────────────┘
-```
-- **模組化設計的優點**
-- **介面隔離與相依性注入**
-
-### Slide 18: 設計模式應用
-- **Strategy Pattern (策略模式)**
-```java
-// Hash Function可替換設計
-HashFunction[] functions = {
-    new SimpleHashFunction(),
-    new MultiplicationHashFunction(),
-    new UniversalHashFunction()
-};
-```
-- **Template Method Pattern (樣板方法模式)**
-- **Observer Pattern (觀察者模式)**
-
-### Slide 19: GUI設計與使用者體驗
-- **Swing元件的選擇與佈局**
-  - BorderLayout, GridBagLayout的應用
-  - 響應式介面設計
-- **事件驅動程式設計**
-  - ActionListener的實作
-  - SwingWorker避免UI凍結
-- **使用者友善功能**
-  - 即時密碼強度評估
-  - 一鍵複製功能
-  - 歷史紀錄管理
-
-### Slide 20: 錯誤處理與穩定性
-- **輸入驗證機制**
-```java
-if (charSet.isEmpty()) {
-    JOptionPane.showMessageDialog(this, 
-        "請至少選擇一種字符類型！", 
-        "錯誤", JOptionPane.ERROR_MESSAGE);
-    return;
-}
-```
-- **異常處理策略**
-- **記憶體洩漏防護**
-- **線程安全考量**
-
-### Slide 21: 程式碼品質與維護性
-- **程式碼組織結構**
-  - 類別職責分離
-  - 方法長度控制
-  - 命名規範統一
-- **註解與文件**
-  - JavaDoc標準
-  - 程式碼可讀性
-- **測試與驗證**
-  - 單元測試設計
-  - 效能基準測試
-
----
-
-## 第五部分：結論與未來展望 (5-8分鐘)
-
-### Slide 22: 專案成果總結
-- **技術成就**
-  - 成功實作三種Hash Function演算法
-  - 完成完整的效能比較分析
-  - 建立可擴展的軟體架構
-- **學習成果**
-  - 深入理解資料結構的實作細節
-  - 掌握效能測試的方法論
-  - 提升Java程式設計能力
-
-### Slide 23: 實驗發現與洞察
-- **理論驗證**
-  - 時間複雜度在實際應用中的表現
-  - Hash Function品質對應用效果的影響
-  - 資料結構選擇的關鍵考量因素
-- **實務啟發**
-  - 效能優化的實際策略
-  - 軟體設計的權衡取捨
-  - 使用者體驗的重要性
-
-### Slide 24: 技術挑戰與解決方案
-- **遇到的主要挑戰**
-  - Multiplication Hash的浮點精度問題
-  - GUI響應性與效能測試的平衡
-  - 中文編碼兼容性問題
-- **解決方案與經驗**
-  - 純整數運算避免精度丟失
-  - SwingWorker實現非同步處理
-  - 多版本支援策略
-
-### Slide 25: 未來改進方向
-- **功能擴展**
-  - 更多Hash演算法實作 (SHA-256, bcrypt)
-  - 機器學習密碼強度評估
-  - 雲端同步功能
-- **效能優化**
-  - 並行計算支援
-  - JIT編譯器優化
-  - 記憶體池管理
-- **應用價值**
-  - 教育工具開發
-  - 企業安全培訓
-  - 開源社群貢獻
-
-### Slide 26: 學習心得與建議
-- **個人收穫**
-  - 理論與實務結合的重要性
-  - 系統性思考問題的能力
-  - 軟體工程實踐經驗
-- **對後續學習者的建議**
-  - 重視基礎理論的深入理解
-  - 多動手實作驗證理論
-  - 關注軟體品質與使用者體驗
-
-### Slide 27: Q&A與討論
-- **歡迎提問與討論**
-- **聯絡資訊**
-- **專案源碼與文件連結**
-
----
-
-## 附錄：補充資料
-
-### Slide 28: 參考文獻
-- Cormen, T.H. et al. *Introduction to Algorithms*
-- Sedgewick, R. *Algorithms, 4th Edition*  
-- Oracle Java Documentation
-- NIST密碼安全標準
-
-### Slide 29: 技術規格
-- **開發環境**：JDK 8+, Swing GUI
-- **測試環境**：Windows/Mac/Linux
-- **程式碼行數**：約1,500行
-- **測試覆蓋率**：核心功能100%
-
-### Slide 30: Demo展示準備
-- **實際操作演示**
-  - 密碼產生功能
-  - 效能分析工具
-  - 不同演算法比較
-- **即時Q&A回應**
-
----
-
-## 簡報技巧建議
-
-### 時間分配 (總計40-50分鐘)
-- **專案介紹**：5-8分鐘
-- **資料結構分析**：15-20分鐘  
-- **效能評比**：15-20分鐘
-- **程式設計實作**：10-15分鐘
-- **結論與Q&A**：5-8分鐘
-
-### 視覺設計原則
-- **程式碼片段**：使用等寬字體，語法高亮
-- **數據圖表**：清晰的表格和圖形
-- **系統截圖**：高解析度，重點標註
-- **架構圖**：簡潔明了，層次分明
-
-### 報告技巧
-- **理論聯繫實際**：每個概念都有具體程式碼範例
-- **數據支撐論點**：用實驗結果證明分析
-- **互動性設計**：準備Demo和現場測試
-- **深度與廣度平衡**：重點深入，其他概括
-
-這份大綱完整涵蓋了資料結構設計、效能分析、和Java實作三個核心方向，適合學術報告的標準格式。
+**本專案展示了從理論學習到實際應用的完整過程，是學習資料結構與演算法的優秀實踐範例。**
